@@ -1,0 +1,88 @@
+8
+
+dir
+2
+svn+ssh://rabiedenharn@rubyforge.org/var/svn/model-graph/examples
+svn+ssh://rabiedenharn@rubyforge.org/var/svn/model-graph
+
+
+
+2006-10-20T16:45:24.196385Z
+2
+rabiedenharn
+
+
+svn:special svn:externals svn:needs-lock
+
+radiant.rb
+file
+
+
+
+
+2006-10-20T15:31:12.000000Z
+309c0902f9f9c81f0e4c18082838e16d
+2006-10-20T16:45:24.196385Z
+2
+rabiedenharn
+
+blog.rb
+file
+
+
+
+
+2006-10-20T15:31:12.000000Z
+d05f83f9fbfd391f4a5909669741a6dd
+2006-10-20T16:45:24.196385Z
+2
+rabiedenharn
+
+hello.rb
+file
+
+
+
+
+2006-10-20T15:31:12.000000Z
+d32403caa83ac74fc968670259f5bb8a
+2006-10-20T16:45:24.196385Z
+2
+rabiedenharn
+
+badblog.rb
+file
+
+
+
+
+2006-10-20T15:31:12.000000Z
+24b5cb42c293be40e6f38fbdee6eb176
+2006-10-20T16:45:24.196385Z
+2
+rabiedenharn
+
+magazine.rb
+file
+
+
+
+
+2006-10-20T15:31:12.000000Z
+4258ec53bc4ef3670131523a4bf190a0
+2006-10-20T16:45:24.196385Z
+2
+rabiedenharn
+
+goodblog.rb
+file
+
+
+
+
+2006-10-20T15:31:12.000000Z
+7f2999e2bf97bd79b7cb08308037246c
+2006-10-20T16:45:24.196385Z
+2
+rabiedenharn
+

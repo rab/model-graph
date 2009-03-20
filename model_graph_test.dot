@@ -1,0 +1,13 @@
+digraph model_graph {
+    graph [overlap=scale, nodesep=0.5, ranksep=0.5]
+One_Two [shape=diamond, label="", height=0.2, width=0.3]
+One_Two [shape=diamond, label="", height=0.2, width=0.3]
+Alpha -> Beta [arrowtail=tee, arrowhead=crowodot]
+Alpha -> Gamma [constraint=false, arrowtail=crowodot, arrowhead=crowodot, style=dotted]
+One_Two -> Two [arrowtail=crowodot, arrowhead=tee]
+One_Two -> One [constraint=false, arrowtail=crowodot, arrowhead=tee]
+A -> B [arrowtail=tee, arrowhead=crowodot]
+A -> C [arrowtail=tee, arrowhead=odottee]
+Beta -> Gamma [arrowtail=crowodot, arrowhead=tee]
+Selfish -> Selfish [arrowhead=crowodot]
+}

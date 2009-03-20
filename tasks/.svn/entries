@@ -1,0 +1,28 @@
+8
+
+dir
+1
+svn+ssh://rabiedenharn@rubyforge.org/var/svn/model-graph/tasks
+svn+ssh://rabiedenharn@rubyforge.org/var/svn/model-graph
+
+
+
+2006-10-20T01:00:14.601778Z
+1
+rabiedenharn
+
+
+svn:special svn:externals svn:needs-lock
+
+model_graph_tasks.rake
+file
+7
+
+
+
+2008-11-21T17:39:49.000000Z
+71e66b562aa6fe9d8de790d98a8a1753
+2008-11-21T17:42:00.021936Z
+7
+rabiedenharn
+

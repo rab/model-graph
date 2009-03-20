@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>File: model_graph.rb</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+  <meta http-equiv="Content-Script-Type" content="text/javascript" />
+  <link rel="stylesheet" href=".././rdoc-style.css" type="text/css" media="screen" />
+  <script type="text/javascript">
+  // <![CDATA[
+
+  function popupCode( url ) {
+    window.open(url, "Code", "resizable=yes,scrollbars=yes,toolbar=no,status=no,height=150,width=400")
+  }
+
+  function toggleCode( id ) {
+    if ( document.getElementById )
+      elem = document.getElementById( id );
+    else if ( document.all )
+      elem = eval( "document.all." + id );
+    else
+      return false;
+
+    elemStyle = elem.style;
+    
+    if ( elemStyle.display != "block" ) {
+      elemStyle.display = "block"
+    } else {
+      elemStyle.display = "none"
+    }
+
+    return true;
+  }
+  
+  // Make codeblocks hidden by default
+  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
+  
+  // ]]>
+  </script>
+
+</head>
+<body>
+
+
+
+  <div id="fileHeader">
+    <h1>model_graph.rb</h1>
+    <table class="header-table">
+    <tr class="top-aligned-row">
+      <td><strong>Path:</strong></td>
+      <td>model_graph.rb
+      </td>
+    </tr>
+    <tr class="top-aligned-row">
+      <td><strong>Last Update:</strong></td>
+      <td>Mon Sep 18 00:44:21 EDT 2006</td>
+    </tr>
+    </table>
+  </div>
+  <!-- banner header -->
+
+  <div id="bodyContent">
+
+
+
+  <div id="contextContent">
+
+    <div id="description">
+      <p>
+When run from the trunk of a Rails project, produces <a
+href="http://www.graphviz.org/doc/info/lang.html">DOT</a> output which can
+be rendered into a graph by programs such as dot and neato and viewed with
+Graphviz (an <a href="http://www.graphviz.org/License.php">Open Source</a>
+viewer). I use the <a href="http://www.pixelglow.com/graphviz/">Mac OS X
+version</a>, but there&#8217;s a <a
+href="http://darwinports.opendarwin.org/darwinports/dports/graphics/graphviz/Portfile">Darwinports</a>
+(aka, Macports) version, too. Or get the <a
+href="http://www.graphviz.org/Download.php">source</a> and build it
+yourself. You can also import a DOT file with OmniGraffle, but it
+doesn&#8217;t support all the edge decorations that I&#8217;m using.
+</p>
+<table>
+<tr><td valign="top">DOT format:</td><td><a
+href="http://www.graphviz.org/doc/info/lang.html">www.graphviz.org/doc/info/lang.html</a>
+
+</td></tr>
+<tr><td valign="top">Graphviz license:</td><td><a
+href="http://www.graphviz.org/License.php">www.graphviz.org/License.php</a>
+
+</td></tr>
+<tr><td valign="top">Mac OS X Graphviz:</td><td><a href="http://www.pixelglow.com/graphviz">www.pixelglow.com/graphviz</a>/
+
+</td></tr>
+<tr><td valign="top">Darwinports Graphviz:</td><td><a
+href="http://darwinports.opendarwin.org/darwinports/dports/graphics/graphviz/Portfile">darwinports.opendarwin.org/darwinports/dports/graphics/graphviz/Portfile</a>
+
+</td></tr>
+<tr><td valign="top">Graphviz source code:</td><td><a
+href="http://www.graphviz.org/Download.php">www.graphviz.org/Download.php</a>
+
+</td></tr>
+</table>
+<p>
+This is <b>certainly</b> a work-in-progress.
+</p>
+<h3>Usage:</h3>
+<pre>
+  rake model_graph
+</pre>
+<p>
+then open tmp/model_graph.dot with a viewer. Using &#8216;model_graph.rb
+DEBUG=on&#8217; will write a bunch of the raw information obtained from
+reflecting on the ActiveRecord model classes into the output as comments
+(including some things that don&#8217;t actually affect the final graph).
+</p>
+<p>
+See the documentation for <a
+href="../classes/ModelGraph.html#M000002">ModelGraph#do_graph</a> for some
+additional options.
+</p>
+<h3>Bugs:</h3>
+<p>
+The ordering within DOT is based on the tail-to-head relationship of edges,
+but these are somewhat arbitrarily determined by the current reflection on
+ActiveRecord associations. The use of the EDGES= and NODES= options is only
+a partial fix.
+</p>
+<h3>TODO:</h3>
+<ul>
+<li>deal with :as in a better way (now made dashed)
+
+</li>
+<li>deal with :polymorphic better (now make bold and blue)
+
+</li>
+<li>handle indirect descendants of ActiveRecord::Base? (at least make it
+clearer how they&#8217;re filtered out of the graph)
+
+</li>
+<li>models that have no (outbound) associations are depicted in red, but
+sometimes these are just confused by an overridden class (even with :as)
+
+</li>
+</ul>
+<h4>Credits:</h4>
+<p>
+Inspired by: Matt Biddulph at August 2, 2006 02:57 PM URL: <a
+href="http://www.hackdiary.com/archives/000093.html">www.hackdiary.com/archives/000093.html</a>
+</p>
+<hr size="2"></hr><p>
+This is released under the MIT License. Please send comments or
+enhanncement ideas to Rob[at]AgileConsultingLLC[dot]com or
+Rob_Biedenharn[at]alum[dot]mit[dot]edu
+</p>
+<p>
+Copyright &#169; 2006 Rob Biedenharn
+</p>
+<p>
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and associated documentation files (the
+&quot;Software&quot;), to deal in the Software without restriction,
+including without limitation the rights to use, copy, modify, merge,
+publish, distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to the
+following conditions:
+</p>
+<p>
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+</p>
+<p>
+THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+USE OR OTHER DEALINGS IN THE SOFTWARE.
+</p>
+
+    </div>
+
+    <div id="requires-list">
+      <h3 class="section-bar">Required files</h3>
+
+      <div class="name-list">
+      config/environment&nbsp;&nbsp;
+      optparse&nbsp;&nbsp;
+      ostruct&nbsp;&nbsp;
+      </div>
+    </div>
+
+   </div>
+
+
+  </div>
+
+
+    <!-- if includes -->
+
+    <div id="section">
+
+
+
+
+
+      
+
+
+    <!-- if method_list -->
+
+
+  </div>
+
+
+<div id="validator-badges">
+  <p><small><a href="http://validator.w3.org/check/referer">[Validate]</a></small></p>
+</div>
+
+</body>
+</html>

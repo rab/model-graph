@@ -1,0 +1,40 @@
+8
+
+dir
+1
+svn+ssh://rabiedenharn@rubyforge.org/var/svn/model-graph/test
+svn+ssh://rabiedenharn@rubyforge.org/var/svn/model-graph
+
+
+
+2006-10-20T01:00:14.601778Z
+1
+rabiedenharn
+
+
+svn:special svn:externals svn:needs-lock
+
+test_helper.rb
+file
+3
+
+
+
+2006-10-20T17:46:58.000000Z
+c33ef78acb251a804bcaf8dd7decf555
+2006-10-20T18:03:01.109828Z
+3
+rabiedenharn
+
+model_graph_test.rb
+file
+7
+
+
+
+2008-11-21T16:53:28.000000Z
+6a00c383851e67f9810eb990e42a624d
+2008-11-21T17:42:00.021936Z
+7
+rabiedenharn
+

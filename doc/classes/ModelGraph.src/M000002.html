@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html>
+<head>
+  <title>do_graph (ModelGraph)</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+  <link rel="stylesheet" href="../.././rdoc-style.css" type="text/css" media="screen" />
+</head>
+<body class="standalone-code">
+  <pre><span class="ruby-comment cmt"># File lib/model_graph.rb, line 194</span>
+  <span class="ruby-keyword kw">def</span> <span class="ruby-keyword kw">self</span>.<span class="ruby-identifier">do_graph</span>
+    <span class="ruby-identifier">output</span> = <span class="ruby-value str">&quot;&quot;</span>
+    <span class="ruby-identifier">graph</span> = <span class="ruby-constant">Graph</span>.<span class="ruby-identifier">new</span>
+
+
+    <span class="ruby-comment cmt"># If called with:</span>
+    <span class="ruby-comment cmt">#</span>
+    <span class="ruby-comment cmt"># +rake model_graph EDGES=Author-Book+</span>
+    <span class="ruby-comment cmt">#</span>
+    <span class="ruby-comment cmt"># will cause an edge between, for example, Author and Book which can alter</span>
+    <span class="ruby-comment cmt"># the relative hierarchical rank of the two nodes (placing the first above</span>
+    <span class="ruby-comment cmt"># the second).  This can often make a dramatic improvement in the overall</span>
+    <span class="ruby-comment cmt"># layout of the graph.  Unless overridden with a normally discovered edge,</span>
+    <span class="ruby-comment cmt"># the plain arrow will be used to connect the two nodes (so a misspelt</span>
+    <span class="ruby-comment cmt"># node is more easily detected).  Additional edges can be separated by '/'</span>
+    <span class="ruby-comment cmt"># as in +EDGES=Author-Book/Book-Chapter+</span>
+    <span class="ruby-keyword kw">if</span> <span class="ruby-identifier">forced_edges</span> = <span class="ruby-constant">ENV</span>[<span class="ruby-value str">'EDGES'</span>]
+      <span class="ruby-identifier">forced_edges</span>.<span class="ruby-identifier">scan</span>(<span class="ruby-regexp re">%r{(\w+)-(\w+)/?}</span>) <span class="ruby-keyword kw">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">f</span>,<span class="ruby-identifier">t</span><span class="ruby-operator">|</span>
+        <span class="ruby-identifier">graph</span>.<span class="ruby-identifier">add_edge</span>(<span class="ruby-identifier">f</span>, <span class="ruby-identifier">t</span>, <span class="ruby-value str">'style'</span> =<span class="ruby-operator">&gt;</span> <span class="ruby-value str">'solid'</span>)
+      <span class="ruby-keyword kw">end</span>
+    <span class="ruby-keyword kw">end</span>
+
+    <span class="ruby-comment cmt"># If called with:</span>
+    <span class="ruby-comment cmt">#</span>
+    <span class="ruby-comment cmt"># +rake model_graph NODES=Author+</span>
+    <span class="ruby-comment cmt">#</span>
+    <span class="ruby-comment cmt"># will cause a node to be placed into the output early.  This tends to</span>
+    <span class="ruby-comment cmt"># make a node appear further to the left in the resulting graph and can be</span>
+    <span class="ruby-comment cmt"># used to improve the overall layout.  Typically, nodes are not specified,</span>
+    <span class="ruby-comment cmt"># but are left to be positioned based on their edges with other nodes.</span>
+    <span class="ruby-comment cmt"># Additional nodes can be separated by '/' as in +NODES=Author/Book+</span>
+    <span class="ruby-keyword kw">if</span> <span class="ruby-identifier">forced_nodes</span> = <span class="ruby-constant">ENV</span>[<span class="ruby-value str">'NODES'</span>]
+      <span class="ruby-identifier">forced_nodes</span>.<span class="ruby-identifier">scan</span>(<span class="ruby-regexp re">%r{(\w+)/?}</span>) <span class="ruby-keyword kw">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">n</span><span class="ruby-operator">|</span>
+        <span class="ruby-identifier">graph</span>.<span class="ruby-identifier">add_node</span>(<span class="ruby-identifier">n</span>)
+      <span class="ruby-keyword kw">end</span>
+    <span class="ruby-keyword kw">end</span>
+
+    <span class="ruby-identifier">version</span> = <span class="ruby-constant">ActiveRecord</span><span class="ruby-operator">::</span><span class="ruby-constant">Migrator</span>.<span class="ruby-identifier">current_version</span>
+    <span class="ruby-keyword kw">if</span> <span class="ruby-identifier">version</span> <span class="ruby-operator">&gt;</span> <span class="ruby-value">0</span>
+      <span class="ruby-identifier">output</span> <span class="ruby-operator">&lt;&lt;</span> <span class="ruby-node">&quot;// Schema version: #{version}\n&quot;</span>
+    <span class="ruby-keyword kw">end</span>
+
+    <span class="ruby-comment cmt"># except that I'm spitting out the debugging, this could certainly go right</span>
+    <span class="ruby-comment cmt"># before the Graph.edges part:</span>
+    <span class="ruby-identifier">output</span> <span class="ruby-operator">&lt;&lt;</span> <span class="ruby-node">&quot;digraph #{graph.name} {\n&quot;</span>
+    <span class="ruby-identifier">output</span> <span class="ruby-operator">&lt;&lt;</span> <span class="ruby-value str">&quot;  graph [overlap=scale, nodesep=0.5, ranksep=0.5, separation=0.25]\n&quot;</span>
+
+    <span class="ruby-identifier">sep</span> = <span class="ruby-value str">&quot;//&quot;</span> <span class="ruby-operator">&lt;&lt;</span> <span class="ruby-value str">'-'</span> <span class="ruby-operator">*</span> <span class="ruby-value">20</span> <span class="ruby-operator">&lt;&lt;</span> <span class="ruby-value str">&quot;\n&quot;</span>
+
+    <span class="ruby-identifier">nodes</span> = <span class="ruby-constant">Hash</span>.<span class="ruby-identifier">new</span> { <span class="ruby-operator">|</span><span class="ruby-identifier">h</span>,<span class="ruby-identifier">k</span><span class="ruby-operator">|</span> <span class="ruby-identifier">h</span>[<span class="ruby-identifier">k</span>] = <span class="ruby-constant">Hash</span>.<span class="ruby-identifier">new</span> }
+
+    <span class="ruby-keyword kw">for</span> <span class="ruby-identifier">klass</span> <span class="ruby-keyword kw">in</span> <span class="ruby-constant">ActiveRecord</span><span class="ruby-operator">::</span><span class="ruby-constant">Base</span>.<span class="ruby-identifier">send</span>(<span class="ruby-identifier">:subclasses</span>)
+      <span class="ruby-comment cmt"># unless klass.name =~ /::/</span>
+      <span class="ruby-keyword kw">next</span> <span class="ruby-keyword kw">if</span> <span class="ruby-identifier">posers</span>.<span class="ruby-identifier">include?</span>(<span class="ruby-identifier">klass</span>)
+
+      <span class="ruby-comment cmt"># node</span>
+      <span class="ruby-keyword kw">if</span> <span class="ruby-constant">DEBUGGING</span>
+        <span class="ruby-identifier">print</span> <span class="ruby-node">&quot;// #{klass.name}&quot;</span>
+        <span class="ruby-identifier">print</span> <span class="ruby-node">&quot; (#{klass.class_name})&quot;</span> <span class="ruby-keyword kw">unless</span> <span class="ruby-identifier">klass</span>.<span class="ruby-identifier">name</span> <span class="ruby-operator">==</span> <span class="ruby-identifier">klass</span>.<span class="ruby-identifier">class_name</span>
+        <span class="ruby-identifier">print</span> <span class="ruby-value str">&quot;\n&quot;</span>
+      <span class="ruby-keyword kw">end</span>
+
+      <span class="ruby-keyword kw">for</span> <span class="ruby-identifier">a</span> <span class="ruby-keyword kw">in</span> <span class="ruby-identifier">klass</span>.<span class="ruby-identifier">reflect_on_all_associations</span>
+        <span class="ruby-comment cmt"># edge</span>
+        <span class="ruby-keyword kw">if</span> <span class="ruby-constant">DEBUGGING</span>
+          <span class="ruby-identifier">print</span> <span class="ruby-value str">&quot; //&quot;</span>
+          <span class="ruby-identifier">print</span> <span class="ruby-node">&quot; through #{a.through_reflection.class_name}&quot;</span>      <span class="ruby-keyword kw">if</span> <span class="ruby-identifier">a</span>.<span class="ruby-identifier">through_reflection</span>
+          <span class="ruby-identifier">print</span> <span class="ruby-node">&quot; #{a.macro} #{a.class_name}&quot;</span>
+          <span class="ruby-identifier">print</span> <span class="ruby-node">&quot; as #{a.options[:as].to_s.camelize.singularize}&quot;</span>  <span class="ruby-keyword kw">if</span> <span class="ruby-identifier">a</span>.<span class="ruby-identifier">options</span>[<span class="ruby-identifier">:as</span>]
+          <span class="ruby-identifier">print</span> <span class="ruby-value str">&quot;\n&quot;</span>
+        <span class="ruby-keyword kw">end</span>
+
+        <span class="ruby-keyword kw">next</span> <span class="ruby-keyword kw">unless</span> <span class="ruby-identifier">a</span>.<span class="ruby-identifier">class_name</span> <span class="ruby-operator">==</span> <span class="ruby-identifier">a</span>.<span class="ruby-identifier">name</span>.<span class="ruby-identifier">to_s</span>.<span class="ruby-identifier">camelize</span>.<span class="ruby-identifier">singularize</span>
+
+        <span class="ruby-identifier">opts</span> = { <span class="ruby-value str">'label'</span> =<span class="ruby-operator">&gt;</span> <span class="ruby-identifier">a</span>.<span class="ruby-identifier">macro</span>.<span class="ruby-identifier">to_s</span>, <span class="ruby-value str">'arrow'</span> =<span class="ruby-operator">&gt;</span> <span class="ruby-constant">ARROW_FOR</span>[<span class="ruby-identifier">a</span>.<span class="ruby-identifier">macro</span>] }
+        <span class="ruby-identifier">opts</span>.<span class="ruby-identifier">merge!</span>(<span class="ruby-value str">'style'</span> =<span class="ruby-operator">&gt;</span> <span class="ruby-value str">'dotted'</span>, <span class="ruby-value str">'constraint'</span> =<span class="ruby-operator">&gt;</span> <span class="ruby-value str">'false'</span>) <span class="ruby-keyword kw">if</span> <span class="ruby-identifier">a</span>.<span class="ruby-identifier">through_reflection</span>
+        <span class="ruby-identifier">opts</span>.<span class="ruby-identifier">merge!</span>(<span class="ruby-value str">'style'</span> =<span class="ruby-operator">&gt;</span> <span class="ruby-value str">'dashed'</span>) <span class="ruby-keyword kw">if</span> <span class="ruby-identifier">a</span>.<span class="ruby-identifier">options</span>[<span class="ruby-identifier">:as</span>]
+        <span class="ruby-identifier">opts</span>.<span class="ruby-identifier">merge!</span>(<span class="ruby-value str">'style'</span> =<span class="ruby-operator">&gt;</span> <span class="ruby-value str">'bold'</span>, <span class="ruby-value str">'color'</span> =<span class="ruby-operator">&gt;</span> <span class="ruby-value str">'blue'</span>) <span class="ruby-keyword kw">if</span> <span class="ruby-identifier">a</span>.<span class="ruby-identifier">options</span>[<span class="ruby-identifier">:polymorphic</span>]
+
+        <span class="ruby-identifier">fromnodename</span> = <span class="ruby-identifier">klass</span>.<span class="ruby-identifier">name</span>
+        <span class="ruby-identifier">tonodename</span> = <span class="ruby-identifier">a</span>.<span class="ruby-identifier">name</span>.<span class="ruby-identifier">to_s</span>.<span class="ruby-identifier">camelize</span>.<span class="ruby-identifier">singularize</span>
+
+        <span class="ruby-keyword kw">if</span> <span class="ruby-identifier">a</span>.<span class="ruby-identifier">macro</span> <span class="ruby-operator">==</span> <span class="ruby-identifier">:has_and_belongs_to_many</span>
+          <span class="ruby-identifier">tonodename</span> = [<span class="ruby-identifier">fromnodename</span>, <span class="ruby-identifier">tonodename</span>].<span class="ruby-identifier">sort</span>.<span class="ruby-identifier">join</span>(<span class="ruby-value str">'_'</span>)
+          <span class="ruby-identifier">myopts</span> = <span class="ruby-identifier">opts</span>.<span class="ruby-identifier">merge</span>(<span class="ruby-value str">'arrow'</span> =<span class="ruby-operator">&gt;</span> <span class="ruby-constant">ARROW_FOR</span>[<span class="ruby-identifier">:belongs_to</span>])
+          <span class="ruby-identifier">myopts</span>.<span class="ruby-identifier">merge!</span>(<span class="ruby-value str">'constraint'</span> =<span class="ruby-operator">&gt;</span> <span class="ruby-value str">'false'</span>) <span class="ruby-keyword kw">if</span> <span class="ruby-identifier">tonodename</span> <span class="ruby-operator">&gt;</span> <span class="ruby-identifier">fromnodename</span>
+          <span class="ruby-identifier">graph</span>.<span class="ruby-identifier">add_node</span>(<span class="ruby-identifier">tonodename</span>, <span class="ruby-value str">%{[shape=diamond, label=&quot;&quot;, height=0.2, width=0.3]}</span>)
+          <span class="ruby-identifier">graph</span>.<span class="ruby-identifier">add_edge</span>(<span class="ruby-identifier">tonodename</span>, <span class="ruby-identifier">fromnodename</span>, <span class="ruby-identifier">myopts</span>)
+        <span class="ruby-keyword kw">end</span>
+        <span class="ruby-identifier">graph</span>.<span class="ruby-identifier">add_edge</span>(<span class="ruby-identifier">fromnodename</span>, <span class="ruby-identifier">tonodename</span>, <span class="ruby-identifier">opts</span>) <span class="ruby-keyword kw">if</span> <span class="ruby-identifier">klass</span>.<span class="ruby-identifier">name</span> <span class="ruby-operator">==</span> <span class="ruby-identifier">klass</span>.<span class="ruby-identifier">class_name</span>
+
+      <span class="ruby-keyword kw">end</span>
+    <span class="ruby-keyword kw">end</span>
+
+    <span class="ruby-identifier">graph</span>.<span class="ruby-identifier">nodes</span> { <span class="ruby-operator">|</span><span class="ruby-identifier">n</span><span class="ruby-operator">|</span> <span class="ruby-identifier">output</span> <span class="ruby-operator">&lt;&lt;</span> <span class="ruby-identifier">n</span> <span class="ruby-operator">&lt;&lt;</span> <span class="ruby-value str">&quot;\n&quot;</span> }
+
+    <span class="ruby-identifier">constraints_first</span> = <span class="ruby-constant">ARGV</span>.<span class="ruby-identifier">any?</span> { <span class="ruby-operator">|</span><span class="ruby-identifier">arg</span><span class="ruby-operator">|</span> <span class="ruby-identifier">arg</span> <span class="ruby-operator">=~</span> <span class="ruby-regexp re">/--through-first/</span> }
+    <span class="ruby-identifier">graph</span>.<span class="ruby-identifier">edges</span>(<span class="ruby-identifier">constraints_first</span>) { <span class="ruby-operator">|</span><span class="ruby-identifier">e</span><span class="ruby-operator">|</span> <span class="ruby-identifier">output</span> <span class="ruby-operator">&lt;&lt;</span> <span class="ruby-identifier">e</span> <span class="ruby-operator">&lt;&lt;</span> <span class="ruby-value str">&quot;\n&quot;</span> }
+
+    <span class="ruby-identifier">output</span> <span class="ruby-operator">&lt;&lt;</span> <span class="ruby-value str">&quot;}\n&quot;</span>
+
+    <span class="ruby-constant">File</span>.<span class="ruby-identifier">open</span>(<span class="ruby-constant">File</span>.<span class="ruby-identifier">join</span>(<span class="ruby-value str">'tmp'</span>, <span class="ruby-value str">'model.dot'</span>), <span class="ruby-value str">'w'</span>) <span class="ruby-keyword kw">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">f</span><span class="ruby-operator">|</span>
+      <span class="ruby-identifier">f</span>.<span class="ruby-identifier">puts</span> <span class="ruby-identifier">output</span>
+    <span class="ruby-keyword kw">end</span>
+  <span class="ruby-keyword kw">end</span></pre>
+</body>
+</html>

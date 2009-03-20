@@ -1,0 +1,313 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>Class: ModelGraph::Graph</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+  <meta http-equiv="Content-Script-Type" content="text/javascript" />
+  <link rel="stylesheet" href="../.././rdoc-style.css" type="text/css" media="screen" />
+  <script type="text/javascript">
+  // <![CDATA[
+
+  function popupCode( url ) {
+    window.open(url, "Code", "resizable=yes,scrollbars=yes,toolbar=no,status=no,height=150,width=400")
+  }
+
+  function toggleCode( id ) {
+    if ( document.getElementById )
+      elem = document.getElementById( id );
+    else if ( document.all )
+      elem = eval( "document.all." + id );
+    else
+      return false;
+
+    elemStyle = elem.style;
+    
+    if ( elemStyle.display != "block" ) {
+      elemStyle.display = "block"
+    } else {
+      elemStyle.display = "none"
+    }
+
+    return true;
+  }
+  
+  // Make codeblocks hidden by default
+  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
+  
+  // ]]>
+  </script>
+
+</head>
+<body>
+
+
+
+    <div id="classHeader">
+        <table class="header-table">
+        <tr class="top-aligned-row">
+          <td><strong>Class</strong></td>
+          <td class="class-name-in-header">ModelGraph::Graph</td>
+        </tr>
+        <tr class="top-aligned-row">
+            <td><strong>In:</strong></td>
+            <td>
+                <a href="../../files/model_graph_rb.html">
+                model_graph.rb
+                </a>
+        <br />
+            </td>
+        </tr>
+
+        <tr class="top-aligned-row">
+            <td><strong>Parent:</strong></td>
+            <td>
+                Object
+            </td>
+        </tr>
+        </table>
+    </div>
+  <!-- banner header -->
+
+  <div id="bodyContent">
+
+
+
+  <div id="contextContent">
+
+    <div id="description">
+      <p>
+An internal class to collect abstract nodes and edges and deliver them back
+when needed.
+</p>
+
+    </div>
+
+
+   </div>
+
+    <div id="method-list">
+      <h3 class="section-bar">Methods</h3>
+
+      <div class="name-list">
+      <a href="#M000006">add_edge</a>&nbsp;&nbsp;
+      <a href="#M000004">add_node</a>&nbsp;&nbsp;
+      <a href="#M000007">edges</a>&nbsp;&nbsp;
+      <a href="#M000003">new</a>&nbsp;&nbsp;
+      <a href="#M000005">nodes</a>&nbsp;&nbsp;
+      </div>
+    </div>
+
+  </div>
+
+
+    <!-- if includes -->
+
+    <div id="section">
+
+
+
+
+
+    <div id="attribute-list">
+      <h3 class="section-bar">Attributes</h3>
+
+      <div class="name-list">
+        <table>
+        <tr class="top-aligned-row context-row">
+          <td class="context-item-name">name</td>
+          <td class="context-item-value">&nbsp;[R]&nbsp;</td>
+          <td class="context-item-desc"></td>
+        </tr>
+        </table>
+      </div>
+    </div>
+      
+
+
+    <!-- if method_list -->
+    <div id="methods">
+      <h3 class="section-bar">Public Class methods</h3>
+
+      <div id="method-M000003" class="method-detail">
+        <a name="M000003"></a>
+
+        <div class="method-heading">
+          <a href="#M000003" class="method-signature">
+          <span class="method-name">new</span><span class="method-args">(name=&quot;model_graph&quot;)</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Holds information about nodes and edges that should be depicted on the
+UML-ish graph of the ActiveRecord model classes. The <tt>name</tt> is
+optional and only serves to give the graph an internal name. If you had an
+application to combine model graphs from multiple applications, this might
+be useful.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000003-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000003-source">
+<pre>
+     <span class="ruby-comment cmt"># File model_graph.rb, line 123</span>
+123:     <span class="ruby-keyword kw">def</span> <span class="ruby-identifier">initialize</span>(<span class="ruby-identifier">name</span>=<span class="ruby-value str">&quot;model_graph&quot;</span>)
+124:       <span class="ruby-ivar">@name</span> = <span class="ruby-identifier">name</span>
+125:       <span class="ruby-ivar">@nodes</span> = <span class="ruby-constant">Hash</span>.<span class="ruby-identifier">new</span>          <span class="ruby-comment cmt"># holds simple strings</span>
+126:       <span class="ruby-ivar">@edges</span> = <span class="ruby-constant">Hash</span>.<span class="ruby-identifier">new</span> { <span class="ruby-operator">|</span><span class="ruby-identifier">h</span>,<span class="ruby-identifier">k</span><span class="ruby-operator">|</span> <span class="ruby-identifier">h</span>[<span class="ruby-identifier">k</span>] = <span class="ruby-constant">Hash</span>.<span class="ruby-identifier">new</span> { <span class="ruby-operator">|</span><span class="ruby-identifier">h2</span>,<span class="ruby-identifier">k2</span><span class="ruby-operator">|</span> <span class="ruby-identifier">h2</span>[<span class="ruby-identifier">k2</span>] = <span class="ruby-constant">Hash</span>.<span class="ruby-identifier">new</span> } }
+127:     <span class="ruby-keyword kw">end</span>
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <h3 class="section-bar">Public Instance methods</h3>
+
+      <div id="method-M000006" class="method-detail">
+        <a name="M000006"></a>
+
+        <div class="method-heading">
+          <a href="#M000006" class="method-signature">
+          <span class="method-name">add_edge</span><span class="method-args">(fromnode, tonode, options={})</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Create a directed edge from one node to another. If an edge between nodes
+already exists in the opposite direction, the arrow will be attached to the
+other end of the existing edge.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000006-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000006-source">
+<pre>
+     <span class="ruby-comment cmt"># File model_graph.rb, line 144</span>
+144:     <span class="ruby-keyword kw">def</span> <span class="ruby-identifier">add_edge</span>(<span class="ruby-identifier">fromnode</span>, <span class="ruby-identifier">tonode</span>, <span class="ruby-identifier">options</span>={})
+145:       <span class="ruby-keyword kw">unless</span> <span class="ruby-ivar">@edges</span>[<span class="ruby-identifier">tonode</span>].<span class="ruby-identifier">has_key?</span> <span class="ruby-identifier">fromnode</span>
+146:         <span class="ruby-identifier">options</span>.<span class="ruby-identifier">each</span> <span class="ruby-keyword kw">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">k</span>,<span class="ruby-identifier">v</span><span class="ruby-operator">|</span>
+147:           <span class="ruby-ivar">@edges</span>[<span class="ruby-identifier">fromnode</span>][<span class="ruby-identifier">tonode</span>][<span class="ruby-keyword kw">case</span> <span class="ruby-identifier">k</span>.<span class="ruby-identifier">to_s</span>
+148:                                     <span class="ruby-keyword kw">when</span> <span class="ruby-value str">'label'</span> <span class="ruby-operator">:</span> <span class="ruby-value str">'taillabel'</span>
+149:                                     <span class="ruby-keyword kw">when</span> <span class="ruby-regexp re">/^arrow(?:head|tail)?$/</span> <span class="ruby-operator">:</span> <span class="ruby-value str">'arrowhead'</span>
+150:                                     <span class="ruby-keyword kw">else</span> <span class="ruby-identifier">k</span>
+151:                                     <span class="ruby-keyword kw">end</span>] = <span class="ruby-identifier">v</span>
+152:         <span class="ruby-keyword kw">end</span>
+153:       <span class="ruby-keyword kw">else</span>
+154:         <span class="ruby-comment cmt"># reverse sense and overload existing edge</span>
+155:         <span class="ruby-identifier">options</span>.<span class="ruby-identifier">each</span> <span class="ruby-keyword kw">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">k</span>,<span class="ruby-identifier">v</span><span class="ruby-operator">|</span>
+156:           <span class="ruby-ivar">@edges</span>[<span class="ruby-identifier">tonode</span>][<span class="ruby-identifier">fromnode</span>][<span class="ruby-keyword kw">case</span> <span class="ruby-identifier">k</span>.<span class="ruby-identifier">to_s</span>
+157:                                     <span class="ruby-keyword kw">when</span> <span class="ruby-value str">'label'</span> <span class="ruby-operator">:</span> <span class="ruby-value str">'headlabel'</span>
+158:                                     <span class="ruby-keyword kw">when</span> <span class="ruby-regexp re">/^arrow(?:head|tail)?$/</span> <span class="ruby-operator">:</span> <span class="ruby-value str">'arrowtail'</span>
+159:                                     <span class="ruby-keyword kw">else</span> <span class="ruby-identifier">k</span>
+160:                                     <span class="ruby-keyword kw">end</span>] = <span class="ruby-identifier">v</span>
+161:         <span class="ruby-keyword kw">end</span>
+162:       <span class="ruby-keyword kw">end</span>
+163:     <span class="ruby-keyword kw">end</span>
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000004" class="method-detail">
+        <a name="M000004"></a>
+
+        <div class="method-heading">
+          <a href="#M000004" class="method-signature">
+          <span class="method-name">add_node</span><span class="method-args">(nodename, options=&quot;&quot;)</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Create an unattached node in this graph.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000004-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000004-source">
+<pre>
+     <span class="ruby-comment cmt"># File model_graph.rb, line 130</span>
+130:     <span class="ruby-keyword kw">def</span> <span class="ruby-identifier">add_node</span>(<span class="ruby-identifier">nodename</span>, <span class="ruby-identifier">options</span>=<span class="ruby-value str">&quot;&quot;</span>)
+131:       <span class="ruby-ivar">@nodes</span>[<span class="ruby-identifier">nodename</span>] = <span class="ruby-identifier">options</span>
+132:     <span class="ruby-keyword kw">end</span>
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000007" class="method-detail">
+        <a name="M000007"></a>
+
+        <div class="method-heading">
+          <a href="#M000007" class="method-signature">
+          <span class="method-name">edges</span><span class="method-args">(options={}) {|edgestring| ...}</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Iterates over all the DOT formatted edges with nodes having the most edges
+first and the edges without a constraint attribute before those that do.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000007-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000007-source">
+<pre>
+     <span class="ruby-comment cmt"># File model_graph.rb, line 168</span>
+168:     <span class="ruby-keyword kw">def</span> <span class="ruby-identifier">edges</span>(<span class="ruby-identifier">options</span>={}) <span class="ruby-comment cmt"># :yields: edgestring</span>
+169:       <span class="ruby-ivar">@edges</span>.<span class="ruby-identifier">sort</span> { <span class="ruby-operator">|</span><span class="ruby-identifier">a</span>,<span class="ruby-identifier">b</span><span class="ruby-operator">|</span> <span class="ruby-identifier">b</span>[<span class="ruby-value">1</span>].<span class="ruby-identifier">length</span> <span class="ruby-operator">&lt;=&gt;</span> <span class="ruby-identifier">a</span>[<span class="ruby-value">1</span>].<span class="ruby-identifier">length</span> }.<span class="ruby-identifier">each</span> <span class="ruby-keyword kw">do</span> <span class="ruby-operator">|</span>(<span class="ruby-identifier">fromnode</span>,<span class="ruby-identifier">nh</span>)<span class="ruby-operator">|</span>
+170:         <span class="ruby-identifier">nh</span>.<span class="ruby-identifier">sort_by</span> { <span class="ruby-operator">|</span>(<span class="ruby-identifier">t</span>,<span class="ruby-identifier">a</span>)<span class="ruby-operator">|</span> (<span class="ruby-identifier">a</span>.<span class="ruby-identifier">has_key?</span>(<span class="ruby-value str">'constraint'</span>) <span class="ruby-operator">^</span> <span class="ruby-identifier">options</span>[<span class="ruby-identifier">:constraints_first</span>]) <span class="ruby-operator">?</span> <span class="ruby-value">1</span> <span class="ruby-operator">:</span> <span class="ruby-value">0</span> }.<span class="ruby-identifier">each</span> <span class="ruby-keyword kw">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">tonode</span>,<span class="ruby-identifier">eh</span><span class="ruby-operator">|</span>
+171:           <span class="ruby-identifier">e</span> = <span class="ruby-node">&quot;#{fromnode} -&gt; #{tonode} &quot;</span>
+172:           <span class="ruby-identifier">e</span> <span class="ruby-operator">&lt;&lt;</span> <span class="ruby-identifier">eh</span>.<span class="ruby-identifier">inspect</span>(<span class="ruby-identifier">options</span>) <span class="ruby-keyword kw">unless</span> <span class="ruby-identifier">eh</span>.<span class="ruby-identifier">nil?</span>
+173:           <span class="ruby-keyword kw">yield</span> <span class="ruby-identifier">e</span>
+174:         <span class="ruby-keyword kw">end</span>
+175:       <span class="ruby-keyword kw">end</span>
+176:     <span class="ruby-keyword kw">end</span>
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <div id="method-M000005" class="method-detail">
+        <a name="M000005"></a>
+
+        <div class="method-heading">
+          <a href="#M000005" class="method-signature">
+          <span class="method-name">nodes</span><span class="method-args">( {|nodestring| ...}</span>
+          </a>
+        </div>
+      
+        <div class="method-description">
+          <p>
+Iterates over all the nodes previously added to this graph.
+</p>
+          <p><a class="source-toggle" href="#"
+            onclick="toggleCode('M000005-source');return false;">[Source]</a></p>
+          <div class="method-source-code" id="M000005-source">
+<pre>
+     <span class="ruby-comment cmt"># File model_graph.rb, line 135</span>
+135:     <span class="ruby-keyword kw">def</span> <span class="ruby-identifier">nodes</span>                   <span class="ruby-comment cmt"># :yields: nodestring</span>
+136:       <span class="ruby-ivar">@nodes</span>.<span class="ruby-identifier">each</span> <span class="ruby-keyword kw">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">name</span>,<span class="ruby-identifier">options</span><span class="ruby-operator">|</span>
+137:         <span class="ruby-keyword kw">yield</span> <span class="ruby-node">&quot;#{name} #{options}&quot;</span>
+138:       <span class="ruby-keyword kw">end</span>
+139:     <span class="ruby-keyword kw">end</span>
+</pre>
+          </div>
+        </div>
+      </div>
+
+
+    </div>
+
+
+  </div>
+
+
+<div id="validator-badges">
+  <p><small><a href="http://validator.w3.org/check/referer">[Validate]</a></small></p>
+</div>
+
+</body>
+</html>

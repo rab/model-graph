@@ -1,0 +1,28 @@
+8
+
+dir
+3
+svn+ssh://rabiedenharn@rubyforge.org/var/svn/model-graph/lib/model_graph
+svn+ssh://rabiedenharn@rubyforge.org/var/svn/model-graph
+
+
+
+2006-10-20T18:03:01.109828Z
+3
+rabiedenharn
+
+
+svn:special svn:externals svn:needs-lock
+
+version.rb
+file
+7
+
+
+
+2008-07-02T22:48:10.000000Z
+7304ba089d706de3bd9b16b87b9b2d6a
+2008-11-21T17:42:00.021936Z
+7
+rabiedenharn
+

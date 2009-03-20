@@ -1,0 +1,444 @@
+#!/usr/bin/env ruby
+# -*- ruby -*-
+
+# When run from the trunk of a Rails project, produces
+# {DOT}[http://www.graphviz.org/doc/info/lang.html] output which can be
+# rendered into a graph by programs such as dot and neato and viewed with
+# Graphviz (an {Open Source}[http://www.graphviz.org/License.php] viewer).  I
+# use the {Mac OS X version}[http://www.pixelglow.com/graphviz/], but there's
+# a
+# {Darwinports}[http://darwinports.opendarwin.org/darwinports/dports/graphics/graphviz/Portfile]
+# (aka, Macports) version, too.  Or get the
+# source[http://www.graphviz.org/Download.php] and build it yourself.  You can
+# also import a DOT file with OmniGraffle, but it doesn't support all the edge
+# decorations that I'm using.
+#
+# DOT format::           http://www.graphviz.org/doc/info/lang.html
+# Graphviz license::     http://www.graphviz.org/License.php
+# Mac OS X Graphviz::    http://www.pixelglow.com/graphviz/
+# Darwinports Graphviz:: http://darwinports.opendarwin.org/darwinports/dports/graphics/graphviz/Portfile
+# Graphviz source code:: http://www.graphviz.org/Download.php
+#
+# This is *certainly* a work-in-progress.
+#
+# === Usage:
+#
+#   model_graph [options]
+#
+# then open tmp/model_graph.dot with a viewer.  Using 'model_graph --debug'
+# will write a bunch of the raw information obtained from reflecting on the
+# ActiveRecord model classes into the output as comments (including some
+# things that don't actually affect the final graph).
+#
+# See the documentation for ModelGraph#do_graph for some additional options.
+#
+# === Bugs:
+#
+# The ordering within DOT is based on the tail-to-head relationship of edges,
+# but these are somewhat arbitrarily determined by the current reflection on
+# ActiveRecord associations.  The use of the
+# <tt>--edges=<var>[list]</var></tt> and <tt>--nodes=<var>[list]</var></tt>
+# options is only a partial fix.
+#
+# === TODO:
+# * reverse some edges so nodes stay mostly balanced (close to same number of
+#   in and out edges)
+# * handle indirect descendants of ActiveRecord::Base? (at least make it
+#   clearer how they're filtered out of the graph)
+# * models that have no (outbound) associations are depicted in red, but
+#   sometimes these are just confused by an overridden class (even with :as)
+#
+# ==== Credits:
+# Inspired by: Matt Biddulph at August 2, 2006 02:57 PM
+# URL:  http://www.hackdiary.com/archives/000093.html
+#
+# ----
+#
+# This is released under the MIT License.  Please send comments or
+# enhanncement ideas to Rob[at]AgileConsultingLLC[dot]com or
+# Rob_Biedenharn[at]alum[dot]mit[dot]edu
+#
+# Copyright (c) 2006 Rob Biedenharn
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to
+# deal in the Software without restriction, including without limitation the
+# rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+# sell copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+# IN THE SOFTWARE.
+
+require 'rubygems'
+
+require 'config/boot'
+require 'config/environment'
+
+require 'optparse'
+require 'ostruct'
+require File.expand_path(File.dirname(__FILE__)+'/../lib/model_graph.rb')
+
+class Hash                      # :nodoc:
+  def inspect(options={})
+    out = ''
+    sep = '['
+    self.each { |k,v| unless ! options[:label] && k =~ /(?:head|tail)label/
+                        out << sep << "#{k}=#{v}"; sep=', '
+                      end }
+    out << ']' unless sep == '['
+    out
+  end
+end
+
+class OpenStruct                # :nodoc:
+  def to_h
+    @table
+  end
+end
+
+module ModelGraph
+
+  # Should :belongs_to differ when paired with :has_one versus :has_many?
+  #
+  # Should :has_one be 'teetee' if required? (i.e., not null)
+
+  ARROW_FOR = {
+    :belongs_to => 'tee',
+    :has_many   => 'crowodot',
+    :has_one    => 'odottee',
+    :has_and_belongs_to_many => 'crowodot'
+  }
+
+  RC_FILE = '.model_graph_rc'
+
+  # classes that should not be graphed, but are subclasses of
+  # ActiveRecord::Base
+  def self.posers
+    [CGI::Session::ActiveRecordStore::Session]
+  end
+
+  # I'm suppressing the labels for now, but this might be useful (or something
+  # like it) if labels are included.
+  #    edge [labeldistance=2.5, labelangle=15]
+
+  # Examines the models and constructs a DOT formatted graph description based
+  # on the ActiveRecord associations that are discovered.
+  #
+  # If called with:
+  #
+  #  model_graph --edges=Author-Book
+  #
+  # will cause an edge between, for example, Author and Book which can alter
+  # the relative hierarchical rank of the two nodes (placing the first above
+  # the second).  This can often make a dramatic improvement in the overall
+  # layout of the graph.  Unless overridden with a normally discovered edge,
+  # the plain arrow will be used to connect the two nodes (so a misspelt
+  # node is more easily detected).  Additional edges can be separated by '/'
+  # as in <tt>--edges=Author-Book/Book-Chapter</tt>
+  #
+  # If called with:
+  #
+  #  model_graph --nodes=Author
+  #
+  # will cause a node to be placed into the output early.  This tends to make
+  # a node appear further to the left in the resulting graph and can be used
+  # to improve the overall layout.  Typically, nodes are not specified, but
+  # are left to be positioned based on their edges with other nodes.
+  # Additional nodes can be separated by '/' as in
+  # <tt>--nodes=Author/Book</tt>.  Highly connected nodes are less likely to
+  # be influenced by this option.
+  #
+  # ===== Options
+  #
+  # <tt>--name=<em>name</em></tt>:: Change the name of the file into which the
+  #             graph is written and the internal name that is assigned.
+  # <tt>--debug</tt>:: When set to _any_ value, causes comments describing the
+  #             ActiveRecord models to be included in the DOT output.
+  # <tt>--edges=<em>edges</em></tt>:: With a value of <tt>N1-N2</tt>
+  #             [<em>/N3-N4</em>...] adds a relationship between <tt>N1</tt>
+  #             and <tt>N2</tt> (and <tt>N3</tt> and <tt>N4</tt>, etc.) as
+  #             described above.  When separated by a '+' as in <tt>N1+N2</tt>,
+  #             the relative placement of the nodes will not be constrained
+  #             (this is sometimes useful for allowing nodes to share a 'rank'
+  #             and be rendered horizontally if there are no other
+  #             relationships).
+  # <tt>--nodes=<em>nodes</em></tt>:: Adds extra +nodes+ early in the DOT
+  #             output to influence placement.
+  # <tt>--test</tt>:: Graphs an internal set of model classes rather than
+  #             what's in <tt>app/models/*.rb</tt>
+  # <tt>--shape==<em>type</em></tt>:: Changes the default shape of the nodes
+  #             in the graph from +plaintext+ to any
+  #             {valid DOT value}[http://www.graphviz.org/doc/info/shapes.html] is
+  #             acceptable (try +rectangle+ or +ellipse+)
+  # <tt>--label</tt>:: Show edge labels
+  # <tt>--constraints-first</tt>:: (or '--cf') Output constrained edges first
+  #             (normally last).  This may improve the overall layout when
+  #             there are has_and_belongs_to_many relationships.
+  #
+  # ===== Persistent Options
+  #
+  # Any of the options can be specified in a file named .model_graph_rc in the
+  # RAILS_ROOT directory which will be used to initialize the options prior to
+  # processing the command-line.
+  #
+  # Note that options on the command line supercede the contents of the
+  # .model_graph_rc file rather than add to it.  For 'edges=...' and
+  # 'nodes=...', this might be considered unfortunate when trying to influence
+  # the resulting layout after your models change.
+  #
+  # Sure it's a hack, but this special rc file can set or override the default
+  # options.  I use this for long "edges=..." lines mostly.  If model_graph
+  # was a bit smarter about the implicit layout, then perhaps this would be
+  # unnecessary.  However, the DOT documentation also mentions that this
+  # technique of influencing the layout by tweaking the order of nodes and
+  # edges is fragile anyway and may (should!) change in the future.
+  def self.do_graph(options)
+    output = ""
+    graph = ::Graph.new(options.name)
+
+    if options.edges
+      options.edges.scan(%r{(\w+)([-+])(\w+)/?}) do |f,kind,t|
+        eopts = { 'style' => 'solid' }
+        eopts.merge!('constraint' => 'false') if kind == '+'
+        graph.add_edge(f, t, eopts)
+      end
+    end
+
+    if options.nodes
+      options.nodes.scan(%r{(\w+)/?}) do |n|
+        graph.add_node(n)
+      end
+    end
+
+    version = ActiveRecord::Migrator.current_version
+    if version > 0
+      output << "// Schema version: #{version}\n"
+    end
+
+    # except that I'm spitting out the debugging, this could certainly go right
+    # before the Graph.edges part:
+    output << "digraph #{graph.name} {\n"
+    output << "  graph [overlap=scale, nodesep=0.5, ranksep=0.5, separation=0.25]\n"
+    output << "  node  [shape=#{options.shape.downcase}]\n"
+
+    nodes = Hash.new { |h,k| h[k] = Hash.new }
+
+    for klass in ActiveRecord::Base.send(:subclasses)
+      next if posers.include?(klass)
+
+      # node
+      if options.debug
+        output << "// #{klass.name}"
+        output << " (#{klass.class_name})" unless klass.name == klass.class_name
+        output << "\n"
+      end
+
+      standalone = true
+      for a in klass.reflect_on_all_associations
+        # edge
+        if options.debug
+          output << " //"
+          output << " through #{a.through_reflection.class_name}"      if a.through_reflection
+          output << " #{a.macro} #{a.class_name}"
+          output << " as #{a.options[:as].to_s.camelize.singularize}"  if a.options[:as]
+          output << " polymorphic"                                     if a.options[:polymorphic]
+          output << "\n"
+        end
+
+# Why was I skipping these?
+#         next unless a.class_name == a.name.to_s.camelize.singularize
+
+        next if a.options[:polymorphic]
+
+        opts = { 'label' => a.macro.to_s, 'arrow' => ARROW_FOR[a.macro] }
+        opts.merge!('style' => 'dotted', 'constraint' => 'false') if a.through_reflection
+        opts.merge!('color' => 'blue', 'midlabel' => a.options[:as].to_s.camelize.singularize) if a.options[:as]
+        opts.merge!('style' => 'dashed', 'color' => 'green', 'fontsize' => '8',
+                    'midlabel' => a.options[:foreign_key] || "#{a.name.to_s.singularize.underscore}_id"
+                    )  unless a.class_name == a.name.to_s.camelize.singularize
+
+        opts.merge!('color' => 'red') if a.options[:finder_sql]
+
+        fromnodename = klass.name
+        #tonodename = a.name.to_s.camelize.singularize
+        tonodename = a.class_name
+
+        if a.macro == :has_and_belongs_to_many
+          tonodename = [fromnodename, tonodename].sort.join('_')
+          myopts = opts.merge('arrow' => ARROW_FOR[:belongs_to])
+          myopts.merge!('constraint' => 'false') if tonodename > fromnodename
+          graph.add_node(tonodename, %{[shape=diamond, label="", height=0.2, width=0.3]})
+          graph.add_edge(tonodename, fromnodename, myopts)
+          standalone = false
+        end
+        # Was this part of the polymorphic thing?
+        #if klass.name == klass.class_name
+          graph.add_edge(fromnodename, tonodename, opts)
+          if a.options[:as]
+            graph.add_edge(tonodename, fromnodename,
+                           'arrow' => ARROW_FOR[:belongs_to], 'fontcolor' => 'blue')
+          end
+          standalone = false
+#         elsif options.debug
+#           output << " // !! skipping edge #{fromnodename} -> #{tonodename} #{opts.inspect}\n"
+#         end
+      end
+      graph.add_node(klass.name, %{[color=red, fontcolor=red]}) if standalone
+    end
+
+    graph.nodes { |n| output << n << "\n" }
+
+    graph.edges(options.to_h) { |e| output << e << "\n" }
+
+    output << "}\n"
+
+    begin
+      File.open(File.join('tmp', graph.name+'.dot'), 'w') do |f|
+        f.puts output
+      end
+    rescue
+      File.open(graph.name+'.dot', 'w') do |f|
+        f.puts output
+      end
+    end
+
+  end
+
+  options = OpenStruct.new(:name => 'model',
+                           :shape => 'plaintext',
+                           :debug => false,
+                           :test => false,
+                           :label => false,
+                           :constraints_first => false)
+
+  # Sure it's a hack, but a special rc file can set or override the
+  # default options.  I use this for long "edges=..." lines mostly.  If
+  # model_graph was a bit smarter about the implicit layout, then perhaps this
+  # would be unnecessary.  However, the DOT documentation also mentions that
+  # this technique of influencing the layout by tweaking the order of nodes
+  # and edges is fragile anyway and may (should!) change in the future.
+  File.open(RC_FILE, 'r') do |rc|
+    for line in rc
+      next if line =~ /\A\s*#/
+      var, value = line.split(/=/, 2)
+      options.send("#{var}=", value)
+    end
+  end if File.exists?(RC_FILE)
+
+  OptionParser.new do |opts|
+    opts.on("-t[=FILE]", "--test[=FILE]", String) do |val|
+      puts "test: #{val}" if options.debug
+      if val && File.exists?(val)
+        puts "getting #{val}..." if options.debug
+        require val
+        options.test = val
+      else
+        options.test = true
+      end
+    end
+
+    opts.on("--sample=WHICH", String) do |val|
+      puts "sample: #{val}" if options.debug
+      puts "__FILE__ = #{__FILE__}" if options.debug
+
+      sample = File.join(File.dirname(__FILE__), '..', 'examples',
+                         File.basename(val, ".rb") + '.rb')
+      if File.exists?(sample)
+        puts "getting #{sample} ..." if options.debug
+        require sample
+        options.test = sample
+        options.name = File.basename(val, ".rb") if options.name == 'model'
+      end
+    end
+
+    opts.on("-d", '--debug',
+            "Include debugging comments in the graph") do |val|
+      puts "debug: #{val}"
+      options.debug = true
+    end
+    opts.on("--nodes=NODELIST",
+            "Add named nodes to graph") do |val|
+      puts "nodes: #{val}" if options.debug
+      options.nodes = val
+    end
+    opts.on("--edges=EDGELIST",
+            "Add edges to graph (to affect node rank)") do |val|
+      puts "edges: #{val}" if options.debug
+      options.edges = val
+    end
+    opts.on("--name=NAME",
+            "Give the graph an internal name and use tmp/NAME.dot for the output") do |val|
+      puts "name: #{val}" if options.debug
+      options.name = val
+    end
+    opts.on("--shape=KIND", "override the shape of a node with a valid DOT shape") do |val|
+      puts "shape: #{val}" if options.debug
+      options.shape = val
+    end
+    opts.on("--label", "-l", "show edge labels") { |val| options.label = true }
+    opts.on("--constraints-first", "--cf", "output constrained edges first (normally last)") do |val|
+      options.constraints_first = true
+    end
+
+  end.parse!
+
+  puts options.to_s if options.debug
+
+  unless options.test
+    for f in Dir.glob(File.join(RAILS_ROOT || '.', "app/models", "*.rb"))
+      puts "getting #{f}..." if options.debug
+      require f
+    end
+  else
+    # Testing
+    if TrueClass === options.test
+      eval <<-"SAMPLE"
+        class A < ActiveRecord::Base  # :nodoc:
+          has_many :bs
+          has_one :c
+        end
+        class B < ActiveRecord::Base  # :nodoc:
+          belongs_to :a
+        end
+        class C < ActiveRecord::Base  # :nodoc:
+          belongs_to :a
+        end
+        class One < ActiveRecord::Base  # :nodoc:
+          has_and_belongs_to_many :twos
+        end
+        class Two < ActiveRecord::Base  # :nodoc:
+          has_and_belongs_to_many :ones
+        end
+        class Alpha < ActiveRecord::Base  # :nodoc:
+          has_many :betas
+          has_many :gammas, :through => :betas
+        end
+        class Beta < ActiveRecord::Base  # :nodoc:
+          belongs_to :alpha
+          belongs_to :gamma
+        end
+        class Gamma < ActiveRecord::Base  # :nodoc:
+          has_many :betas
+          has_many :alphas, :through => :betas
+        end
+        class Selfish < ActiveRecord::Base  # :nodoc:
+          has_many :selfishes, :foreign_key => :solo_id
+        end
+        SAMPLE
+      puts 'doing the SAMPLE' if options.debug
+    end
+  end
+
+  do_graph(options)
+
+end
+__END__
