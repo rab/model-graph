@@ -58,7 +58,7 @@
 # enhanncement ideas to Rob[at]AgileConsultingLLC[dot]com or
 # Rob_Biedenharn[at]alum[dot]mit[dot]edu
 #
-# Copyright (c) 2006 Rob Biedenharn
+# Copyright (c) 2006-2009 Rob Biedenharn
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to
@@ -123,7 +123,16 @@ module ModelGraph
   # classes that should not be graphed, but are subclasses of
   # ActiveRecord::Base
   def self.posers
-    [CGI::Session::ActiveRecordStore::Session]
+    posers = []
+    begin
+      posers << CGI::Session::ActiveRecordStore::Session
+    rescue NameError
+    end
+    begin
+      posers << ActiveRecord::SessionStore::Session
+    rescue NameError
+    end
+    posers
   end
 
   # I'm suppressing the labels for now, but this might be useful (or something
@@ -232,7 +241,7 @@ module ModelGraph
 
     nodes = Hash.new { |h,k| h[k] = Hash.new }
 
-    for klass in ActiveRecord::Base.send(:subclasses)
+    ActiveRecord::Base.send(:subclasses).each do |klass|
       next if posers.include?(klass)
 
       # node
@@ -242,8 +251,11 @@ module ModelGraph
         output << "\n"
       end
 
+      next unless klass.class_name == klass.name # Probably an STI descendant, try skipping those...
+      # ideally, the "parent" of the STI should be annotated with all the subclass types
+
       standalone = true
-      for a in klass.reflect_on_all_associations
+      klass.reflect_on_all_associations.each do |a|
         # edge
         if options.debug
           output << " //"
@@ -254,7 +266,7 @@ module ModelGraph
           output << "\n"
         end
 
-# Why was I skipping these?
+# Why was I skipping these?  Ah! STI makes a.name != a.class_name
 #         next unless a.class_name == a.name.to_s.camelize.singularize
 
         next if a.options[:polymorphic]
