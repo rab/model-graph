@@ -10,16 +10,25 @@ class Graph
   # might be useful.
   def initialize(name="model_graph")
     @name = name
-    @nodes = Hash.new          # holds simple strings
+    @nodes = Hash.new           # holds simple strings
     @edges = Hash.new { |h,k| h[k] = Hash.new { |h2,k2| h2[k2] = Hash.new } }
+    @ignore = Hash.new          # holds simple strings
 
     # A hm B :as => Y    gives edge A->B and implies B bt A
-    # C hm B :as => Y    gives edge C->B and implies B bt A
+    # C hm B :as => Y    gives edge C->B and implies B bt C
     # B bt Y :polymorphic => true       no new information
+  end
+
+  # Ignore all later attempts to add a node with this name (or an edge to or
+  # from such a node)
+  def ignore(name)
+    return if @ignore.has_key?(name)
+    @ignore[name] = name
   end
 
   # Create an unattached node in this graph.
   def add_node(nodename, options="")
+    return if @ignore[nodename]
     @nodes[nodename] = options
   end
 
@@ -34,6 +43,8 @@ class Graph
   # nodes already exists in the opposite direction, the arrow will be
   # attached to the other end of the existing edge.
   def add_edge(fromnode, tonode, options={})
+    return if @ignore[fromnode] || @ignore[tonode]
+
     unless @edges[tonode].has_key? fromnode
       options.each do |k,v|
         @edges[fromnode][tonode][case k.to_s
@@ -54,6 +65,11 @@ class Graph
                                  end] = v
       end
     end
+  end
+
+  def has_edge?(a_node, b_node)
+    @edges.has_key?(a_node) && @edges[a_node].has_key?(b_node) ||
+      @edges.has_key?(b_node) && @edges[b_node].has_key?(a_node)
   end
 
   # Iterates over all the DOT formatted edges with nodes having the most

@@ -182,6 +182,9 @@ module ModelGraph
   #             relationships).
   # <tt>--nodes=<em>nodes</em></tt>:: Adds extra +nodes+ early in the DOT
   #             output to influence placement.
+  # <tt>--ignore=<em>models</em></tt>:: Completely igore these models as nodes
+  #             in the graph construction. It can't undo what the +nodes+
+  #             or +edges+ options already created.
   # <tt>--test</tt>:: Graphs an internal set of model classes rather than
   #             what's in <tt>app/models/*.rb</tt>
   # <tt>--shape==<em>type</em></tt>:: Changes the default shape of the nodes
@@ -214,17 +217,23 @@ module ModelGraph
     output = ""
     graph = ::Graph.new(options.name)
 
+    if options.ignore
+      options.ignore.scan(%r{(\w+)/?}) do |n|
+        graph.ignore(*n)
+      end
+    end
+
     if options.edges
       options.edges.scan(%r{(\w+)([-+])(\w+)/?}) do |f,kind,t|
-        eopts = { 'style' => 'solid' }
-        eopts.merge!('constraint' => 'false') if kind == '+'
+        eopts = { 'style' => 'solid', 'arrowhead' => 'none' }
+        eopts.update('constraint' => 'false') if kind == '+'
         graph.add_edge(f, t, eopts)
       end
     end
 
     if options.nodes
       options.nodes.scan(%r{(\w+)/?}) do |n|
-        graph.add_node(n)
+        graph.add_node(*n)
       end
     end
 
@@ -242,6 +251,7 @@ module ModelGraph
     nodes = Hash.new { |h,k| h[k] = Hash.new }
 
     ActiveRecord::Base.send(:subclasses).each do |klass|
+      print "#{klass}... " if options.debug
       next if posers.include?(klass)
 
       # node
@@ -251,7 +261,7 @@ module ModelGraph
         output << "\n"
       end
 
-      next unless klass.class_name == klass.name # Probably an STI descendant, try skipping those...
+#      next unless klass.class_name == klass.name # Probably an STI descendant, try skipping those...
       # ideally, the "parent" of the STI should be annotated with all the subclass types
 
       standalone = true
@@ -266,46 +276,52 @@ module ModelGraph
           output << "\n"
         end
 
-# Why was I skipping these?  Ah! STI makes a.name != a.class_name
-#         next unless a.class_name == a.name.to_s.camelize.singularize
+        # Why was I skipping these?  Ah! STI makes a.name != a.class_name
+        #         next unless a.class_name == a.name.to_s.camelize.singularize
 
         next if a.options[:polymorphic]
-
-        opts = { 'label' => a.macro.to_s, 'arrow' => ARROW_FOR[a.macro] }
-        opts.merge!('style' => 'dotted', 'constraint' => 'false') if a.through_reflection
-        opts.merge!('color' => 'blue', 'midlabel' => a.options[:as].to_s.camelize.singularize) if a.options[:as]
-        opts.merge!('style' => 'dashed', 'color' => 'green', 'fontsize' => '8',
-                    'midlabel' => a.options[:foreign_key] || "#{a.name.to_s.singularize.underscore}_id"
-                    )  unless a.class_name == a.name.to_s.camelize.singularize
-
-        opts.merge!('color' => 'red') if a.options[:finder_sql]
 
         fromnodename = klass.name
         #tonodename = a.name.to_s.camelize.singularize
         tonodename = a.class_name
 
+        opts = { 'label' => a.macro.to_s, 'arrow' => ARROW_FOR[a.macro] }
+        if a.through_reflection
+          opts.update('style' => 'dotted')
+          opts.update('constraint' => 'false') unless graph.has_edge?(fromnodename, tonodename)
+        end
+        opts.update('color' => 'blue', 'midlabel' => a.options[:as].to_s.camelize.singularize) if a.options[:as]
+        if a.macro == :belongs_to && a.class_name != a.name.to_s.camelize.singularize
+          opts.update('style' => 'dashed', 'color' => 'green', 'fontsize' => '8',
+                      'midlabel' => a.options[:foreign_key] || "#{a.name.to_s.singularize.underscore}_id"
+                      )
+        end
+
+        opts.update('color' => 'red') if a.options[:finder_sql]
+
         if a.macro == :has_and_belongs_to_many
           tonodename = [fromnodename, tonodename].sort.join('_')
           myopts = opts.merge('arrow' => ARROW_FOR[:belongs_to])
-          myopts.merge!('constraint' => 'false') if tonodename > fromnodename
+          myopts.update('constraint' => 'false') if tonodename > fromnodename
           graph.add_node(tonodename, %{[shape=diamond, label="", height=0.2, width=0.3]})
           graph.add_edge(tonodename, fromnodename, myopts)
           standalone = false
         end
         # Was this part of the polymorphic thing?
         #if klass.name == klass.class_name
-          graph.add_edge(fromnodename, tonodename, opts)
-          if a.options[:as]
-            graph.add_edge(tonodename, fromnodename,
-                           'arrow' => ARROW_FOR[:belongs_to], 'fontcolor' => 'blue')
-          end
-          standalone = false
-#         elsif options.debug
-#           output << " // !! skipping edge #{fromnodename} -> #{tonodename} #{opts.inspect}\n"
-#         end
+        graph.add_edge(fromnodename, tonodename, opts)
+        if a.options[:as]
+          graph.add_edge(tonodename, fromnodename,
+                         'arrow' => ARROW_FOR[:belongs_to], 'fontcolor' => 'blue')
+        end
+        standalone = false
+        #         elsif options.debug
+        #           output << " // !! skipping edge #{fromnodename} -> #{tonodename} #{opts.inspect}\n"
+        #         end
       end
       graph.add_node(klass.name, %{[color=red, fontcolor=red]}) if standalone
     end
+    puts if options.debug
 
     graph.nodes { |n| output << n << "\n" }
 
@@ -339,9 +355,9 @@ module ModelGraph
   # this technique of influencing the layout by tweaking the order of nodes
   # and edges is fragile anyway and may (should!) change in the future.
   File.open(RC_FILE, 'r') do |rc|
-    for line in rc
-      next if line =~ /\A\s*#/
-      var, value = line.split(/=/, 2)
+    rc.each do |line|
+      next if line =~ /\A\s*#/ || line.strip.empty?
+      var, value = line.chomp.split(/=/, 2)
       options.send("#{var}=", value)
     end
   end if File.exists?(RC_FILE)
@@ -387,6 +403,11 @@ module ModelGraph
       puts "edges: #{val}" if options.debug
       options.edges = val
     end
+    opts.on("--ignore=NODELIST",
+            "Refuse to add named nodes to graph that appear on this list") do |val|
+      puts "ignore: #{val}" if options.debug
+      options.ignore = val
+    end
     opts.on("--name=NAME",
             "Give the graph an internal name and use tmp/NAME.dot for the output") do |val|
       puts "name: #{val}" if options.debug
@@ -406,7 +427,7 @@ module ModelGraph
   puts options.to_s if options.debug
 
   unless options.test
-    for f in Dir.glob(File.join(RAILS_ROOT || '.', "app/models", "*.rb"))
+    Dir.glob(File.join(RAILS_ROOT || '.', "app/models", "*.rb")).each do |f|
       puts "getting #{f}..." if options.debug
       require f
     end
