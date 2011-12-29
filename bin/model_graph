@@ -78,14 +78,14 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 
-require 'rubygems'
-
+#require 'rubygems'
+$: << '.'
 require 'config/boot'
 require 'config/environment'
 
 require 'optparse'
 require 'ostruct'
-require File.expand_path(File.dirname(__FILE__)+'/../lib/model_graph.rb')
+require_relative '../lib/model_graph'
 
 class Hash                      # :nodoc:
   def inspect(options={})
@@ -225,7 +225,7 @@ module ModelGraph
 
     if options.edges
       options.edges.scan(%r{(\w+)([-+])(\w+)/?}) do |f,kind,t|
-        eopts = { 'style' => 'solid', 'arrowhead' => 'none' }
+        eopts = { 'style' => 'solid', 'dir' => 'both', 'arrowtail' => 'none', 'arrowhead' => 'none' }
         eopts.update('constraint' => 'false') if kind == '+'
         graph.add_edge(f, t, eopts)
       end
@@ -285,7 +285,7 @@ module ModelGraph
         #tonodename = a.name.to_s.camelize.singularize
         tonodename = a.class_name
 
-        opts = { 'label' => a.macro.to_s, 'arrow' => ARROW_FOR[a.macro] }
+        opts = { 'label' => a.macro.to_s, 'arrow' => ARROW_FOR[a.macro], 'dir' => 'both' }
         if a.through_reflection
           opts.update('style' => 'dotted')
           opts.update('constraint' => 'false') unless graph.has_edge?(fromnodename, tonodename)
@@ -312,7 +312,7 @@ module ModelGraph
         graph.add_edge(fromnodename, tonodename, opts)
         if a.options[:as]
           graph.add_edge(tonodename, fromnodename,
-                         'arrow' => ARROW_FOR[:belongs_to], 'fontcolor' => 'blue')
+                         'arrow' => ARROW_FOR[:belongs_to], 'fontcolor' => 'blue', 'dir' => 'both')
         end
         standalone = false
         #         elsif options.debug
@@ -427,7 +427,7 @@ module ModelGraph
   puts options.to_s if options.debug
 
   unless options.test
-    Dir.glob(File.join(RAILS_ROOT || '.', "app/models", "*.rb")).each do |f|
+    Dir.glob(File.join('.', "app/models", "*.rb")).each do |f|
       puts "getting #{f}..." if options.debug
       require f
     end

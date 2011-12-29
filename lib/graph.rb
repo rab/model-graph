@@ -48,9 +48,9 @@ class Graph
     unless @edges[tonode].has_key? fromnode
       options.each do |k,v|
         @edges[fromnode][tonode][case k.to_s
-                                 when 'label' : 'taillabel'
-                                 when 'midlabel' : 'label'
-                                 when /^arrow(?:head|tail)?$/ : 'arrowhead'
+                                 when 'label' ; 'taillabel'
+                                 when 'midlabel' ; 'label'
+                                 when /^arrow(?:head|tail)?$/ ; 'arrowhead'
                                  else k
                                  end] = v
       end
@@ -58,9 +58,9 @@ class Graph
       # reverse sense and overload existing edge
       options.each do |k,v|
         @edges[tonode][fromnode][case k.to_s
-                                 when 'label' : 'headlabel'
-                                 when 'midlabel' : 'label'
-                                 when /^arrow(?:head|tail)?$/ : 'arrowtail'
+                                 when 'label' ; 'headlabel'
+                                 when 'midlabel' ; 'label'
+                                 when /^arrow(?:head|tail)?$/ ; 'arrowtail'
                                  else k
                                  end] = v
       end
